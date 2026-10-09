@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Prism.Wpf" Version="8.1.97" />
+    <PackageReference Include="HandyControl" Version="3.5.1" />
+    <PackageReference Include="Nodify" Version="7.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowMachine.Core\FlowMachine.Core.csproj" />
+    <ProjectReference Include="..\FlowMachine.Runtime\FlowMachine.Runtime.csproj" />
+    <ProjectReference Include="..\FlowMachine.Infrastructure\FlowMachine.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

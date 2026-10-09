@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FlowMachine.Core\FlowMachine.Core.csproj" />
+    <ProjectReference Include="..\..\src\FlowMachine.Runtime\FlowMachine.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\FlowMachine.Infrastructure\FlowMachine.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

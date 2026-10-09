@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/FlowMachine.Core/FlowMachine.Core.csproj" />
+  <Project Path="src/FlowMachine.Runtime/FlowMachine.Runtime.csproj" />
+  <Project Path="src/FlowMachine.Infrastructure/FlowMachine.Infrastructure.csproj" />
+  <Project Path="src/FlowMachine.App/FlowMachine.App.csproj" />
+  <Project Path="tests/FlowMachine.Tests/FlowMachine.Tests.csproj" />
+</Solution>

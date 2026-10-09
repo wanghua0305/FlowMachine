@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowMachine.Core\FlowMachine.Core.csproj" />
+    <ProjectReference Include="..\FlowMachine.Runtime\FlowMachine.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>
