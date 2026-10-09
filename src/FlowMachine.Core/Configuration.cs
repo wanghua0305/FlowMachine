@@ -63,6 +63,7 @@ namespace FlowMachine.Core
         public double X { get; set; }
         public double Y { get; set; }
         public int DelayMilliseconds { get; set; }
+        public int TimeoutMilliseconds { get; set; }
         public string Message { get; set; }
         public string ConditionKey { get; set; }
         public bool ConditionValue { get; set; }
@@ -141,6 +142,7 @@ namespace FlowMachine.Core
                 X = node.X,
                 Y = node.Y,
                 DelayMilliseconds = node.DelayMilliseconds,
+                TimeoutMilliseconds = node.TimeoutMilliseconds,
                 Message = node.Message,
                 ConditionKey = node.ConditionKey,
                 ConditionValue = node.ConditionValue,

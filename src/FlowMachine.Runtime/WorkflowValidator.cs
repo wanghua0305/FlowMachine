@@ -166,6 +166,10 @@ namespace FlowMachine.Runtime
                     {
                         errors.Add("Delay node " + node.Id + " must be between 0 and 600000 ms.");
                     }
+                    if (node.TimeoutMilliseconds < 0 || node.TimeoutMilliseconds > 600000)
+                    {
+                        errors.Add("Delay timeout at node " + node.Id + " must be between 0 and 600000 ms.");
+                    }
                     break;
                 case NodeTypeIds.Log:
                     if (node.Message == null)

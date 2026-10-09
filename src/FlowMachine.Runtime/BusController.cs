@@ -66,7 +66,7 @@ namespace FlowMachine.Runtime
         public BusController(IEnumerable<IStation> stations, IWorkflowExecutor executor,
             IStationScheduleStrategy schedule)
         {
-            _stations = stations.ToList();
+            _stations = stations as IList<IStation> ?? stations.ToList();
             _executor = executor;
             _schedule = schedule;
             _state = BusState.Idle;
@@ -149,7 +149,10 @@ namespace FlowMachine.Runtime
                 }
             }
 
-            ChangeState(BusState.Stopping);
+            if (State != BusState.Completed && State != BusState.Faulted)
+            {
+                ChangeState(BusState.Stopping);
+            }
             if (gate != null)
             {
                 gate.Cancel();
@@ -397,6 +400,12 @@ namespace FlowMachine.Runtime
             lock (_sync)
             {
                 previous = _state;
+                if (!IsAllowedTransition(previous, state))
+                {
+                    throw new InvalidOperationException(
+                        "Illegal bus state transition: " + previous + " -> " + state + ".");
+                }
+
                 _state = state;
             }
 
@@ -407,6 +416,45 @@ namespace FlowMachine.Runtime
                 {
                     handler(this, new BusStateChangedEventArgs(previous, state));
                 }
+            }
+        }
+
+        private static bool IsAllowedTransition(BusState from, BusState to)
+            {
+                if (from == to)
+                {
+                    return true;
+                }
+
+                switch (from)
+                {
+                    case BusState.Idle:
+                        return to == BusState.Starting || to == BusState.Homing;
+                    case BusState.Starting:
+                        return to == BusState.Running || to == BusState.Pausing
+                            || to == BusState.Stopping || to == BusState.Completed
+                            || to == BusState.Faulted || to == BusState.Idle;
+                    case BusState.Running:
+                    case BusState.Homing:
+                        return to == BusState.Pausing || to == BusState.Stopping
+                            || to == BusState.Completed || to == BusState.Faulted
+                            || to == BusState.Idle;
+                    case BusState.Pausing:
+                        return to == BusState.Paused || to == BusState.Stopping
+                            || to == BusState.Completed || to == BusState.Faulted
+                            || to == BusState.Idle;
+                    case BusState.Paused:
+                        return to == BusState.Running || to == BusState.Stopping
+                            || to == BusState.Completed || to == BusState.Faulted
+                            || to == BusState.Idle;
+                    case BusState.Stopping:
+                        return to == BusState.Idle || to == BusState.Faulted;
+                    case BusState.Completed:
+                        return to == BusState.Idle || to == BusState.Starting || to == BusState.Homing;
+                    case BusState.Faulted:
+                        return to == BusState.Idle;
+                    default:
+                        return false;
             }
         }
 

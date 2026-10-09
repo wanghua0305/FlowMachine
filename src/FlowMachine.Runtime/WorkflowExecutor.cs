@@ -152,7 +152,29 @@ namespace FlowMachine.Runtime
                 case NodeTypeIds.End:
                     return;
                 case NodeTypeIds.Delay:
-                    await Task.Delay(node.DelayMilliseconds, cancellationToken).ConfigureAwait(false);
+                    if (node.TimeoutMilliseconds > 0)
+                    {
+                        using (CancellationTokenSource timeout = new CancellationTokenSource())
+                        using (CancellationTokenSource linked =
+                            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token))
+                        {
+                            timeout.CancelAfter(node.TimeoutMilliseconds);
+                            try
+                            {
+                                await Task.Delay(node.DelayMilliseconds, linked.Token).ConfigureAwait(false);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                throw new TimeoutException("Delay node " + node.Id + " exceeded its "
+                                    + node.TimeoutMilliseconds + " ms timeout.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await Task.Delay(node.DelayMilliseconds, cancellationToken).ConfigureAwait(false);
+                    }
                     return;
                 case NodeTypeIds.Log:
                     return;
