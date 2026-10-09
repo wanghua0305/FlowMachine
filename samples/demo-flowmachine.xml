@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FlowMachineConfiguration formatVersion="1">
+  <Stations>
+    <Station>
+      <Id>flow-station-01</Id>
+      <Name>Flow Station 1</Name>
+      <StationType>flow</StationType>
+      <Enabled>true</Enabled>
+      <Nodes>
+        <NodeDefinition><Id>flow-start</Id><Type>start</Type><X>60</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>flow-condition</Id><Type>condition</Type><X>300</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>true</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>flow-delay</Id><Type>delay</Type><X>570</X><Y>40</Y><DelayMilliseconds>350</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>flow-true-log</Id><Type>log</Type><X>830</X><Y>40</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message>Condition selected True branch.</Message><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>flow-false-log</Id><Type>log</Type><X>570</X><Y>250</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message>Condition selected False branch.</Message><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>flow-end</Id><Type>end</Type><X>1100</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+      </Nodes>
+      <Connections>
+        <ConnectionDefinition><SourceNodeId>flow-start</SourceNodeId><TargetNodeId>flow-condition</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>flow-condition</SourceNodeId><TargetNodeId>flow-delay</TargetNodeId><Branch>true</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>flow-condition</SourceNodeId><TargetNodeId>flow-false-log</TargetNodeId><Branch>false</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>flow-delay</SourceNodeId><TargetNodeId>flow-true-log</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>flow-true-log</SourceNodeId><TargetNodeId>flow-end</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>flow-false-log</SourceNodeId><TargetNodeId>flow-end</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+      </Connections>
+    </Station>
+    <Station>
+      <Id>home-station-01</Id>
+      <Name>Home Station 1</Name>
+      <StationType>home</StationType>
+      <Enabled>true</Enabled>
+      <Nodes>
+        <NodeDefinition><Id>home-start</Id><Type>start</Type><X>60</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>home-log</Id><Type>log</Type><X>350</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message>Simulated home operation complete.</Message><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>home-end</Id><Type>end</Type><X>650</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+      </Nodes>
+      <Connections>
+        <ConnectionDefinition><SourceNodeId>home-start</SourceNodeId><TargetNodeId>home-log</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>home-log</SourceNodeId><TargetNodeId>home-end</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+      </Connections>
+    </Station>
+    <Station>
+      <Id>test-station-01</Id>
+      <Name>Test Station 1</Name>
+      <StationType>test</StationType>
+      <Enabled>true</Enabled>
+      <Nodes>
+        <NodeDefinition><Id>test-start</Id><Type>start</Type><X>60</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>test-delay</Id><Type>delay</Type><X>340</X><Y>120</Y><DelayMilliseconds>250</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>test-log</Id><Type>log</Type><X>620</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message>Manual test operation complete.</Message><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+        <NodeDefinition><Id>test-end</Id><Type>end</Type><X>900</X><Y>120</Y><DelayMilliseconds>0</DelayMilliseconds><TimeoutMilliseconds>0</TimeoutMilliseconds><Message /><ConditionKey>simulated</ConditionKey><ConditionValue>false</ConditionValue></NodeDefinition>
+      </Nodes>
+      <Connections>
+        <ConnectionDefinition><SourceNodeId>test-start</SourceNodeId><TargetNodeId>test-delay</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>test-delay</SourceNodeId><TargetNodeId>test-log</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+        <ConnectionDefinition><SourceNodeId>test-log</SourceNodeId><TargetNodeId>test-end</TargetNodeId><Branch>next</Branch></ConnectionDefinition>
+      </Connections>
+    </Station>
+  </Stations>
+</FlowMachineConfiguration>

@@ -247,6 +247,7 @@ namespace FlowMachine.App.ViewModels
         public IStation Station { get; private set; }
         public System.Collections.ObjectModel.ObservableCollection<EditorNodeViewModel> Nodes { get; private set; }
         public System.Collections.ObjectModel.ObservableCollection<EditorConnectionViewModel> Connections { get; private set; }
+        public string Id { get { return Station.Id; } }
         public string Name
         {
             get { return Station.Configuration.Name; }

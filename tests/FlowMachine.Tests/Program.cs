@@ -27,7 +27,9 @@ namespace FlowMachine.Tests
                 Tuple.Create("Resume does not repeat completed nodes", (Func<Task>)ResumeDoesNotRepeatNodes),
                 Tuple.Create("Stop cleans up the active task", (Func<Task>)StopCleansUp),
                 Tuple.Create("Fault and timeout reach the bus", (Func<Task>)FaultAndTimeoutPropagate),
-                Tuple.Create("Configuration round-trips graph edges", (Func<Task>)ConfigurationRoundTrips)
+                Tuple.Create("Configuration round-trips graph edges", (Func<Task>)ConfigurationRoundTrips),
+                Tuple.Create("Demo configuration loads", (Func<Task>)DemoConfigurationLoads),
+                Tuple.Create("Hardware configuration checks IO directions", (Func<Task>)HardwareConfigurationChecksDirections)
             };
 
             int failed = 0;
@@ -274,8 +276,11 @@ namespace FlowMachine.Tests
             try
             {
                 store.Save(path, new[] { original });
+                original.Name = "Saved again";
+                store.Save(path, new[] { original });
                 IList<StationConfiguration> loaded = store.Load(path);
                 Assert(loaded.Count == 1, "Station count did not survive configuration save/load.");
+                Assert(loaded[0].Name == "Saved again", "Configuration overwrite did not replace old values.");
                 Assert(loaded[0].Connections.Count == original.Connections.Count,
                     "Connection count did not survive configuration save/load.");
                 Assert(loaded[0].Connections[0].SourceNodeId == original.Connections[0].SourceNodeId
@@ -290,6 +295,46 @@ namespace FlowMachine.Tests
                 }
             }
 
+            return Task.FromResult(0);
+        }
+
+        private static Task DemoConfigurationLoads()
+        {
+            StationFactory factory = new StationFactory();
+            ConfigurationStore store = new ConfigurationStore(factory,
+                new HardwareConfigurationValidator(new SimulatedDeviceService()));
+            string path = Path.Combine(AppContext.BaseDirectory, "demo-flowmachine.xml");
+            IList<StationConfiguration> stations = store.Load(path);
+            Assert(stations.Count == 3, "Demo configuration should contain all station types.");
+            Assert(stations.Any(station => station.StationType == StationTypeIds.Flow
+                && station.Connections.Count == 6), "Demo FlowStation branches were not restored.");
+            Assert(stations.Any(station => station.StationType == StationTypeIds.Home),
+                "Demo HomeStation was not restored.");
+            Assert(stations.Any(station => station.StationType == StationTypeIds.Test),
+                "Demo TestStation was not restored.");
+            return Task.FromResult(0);
+        }
+
+        private static Task HardwareConfigurationChecksDirections()
+        {
+            HardwareConfigurationValidator validator =
+                new HardwareConfigurationValidator(new SimulatedDeviceService());
+            CylinderNodeConfiguration valid = new CylinderNodeConfiguration
+            {
+                CylinderId = "Cylinder-A",
+                Action = "extend",
+                OutputPointId = "DO-01",
+                ExtendedInputPointId = "DI-01",
+                RetractedInputPointId = "DI-02",
+                TimeoutMilliseconds = 1000,
+                FaultPolicy = "abort"
+            };
+            Assert(validator.ValidateCylinder(valid).Count == 0,
+                "A valid cylinder binding was rejected.");
+
+            valid.OutputPointId = "DI-01";
+            Assert(validator.ValidateCylinder(valid).Any(),
+                "An input point was accepted as a cylinder output.");
             return Task.FromResult(0);
         }
 

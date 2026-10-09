@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using HandyControl.Controls;
 using FlowMachine.Core;
 using FlowMachine.Infrastructure;
 using FlowMachine.Runtime;
@@ -184,10 +185,12 @@ namespace FlowMachine.App.ViewModels
                 string path = Path.Combine(Environment.CurrentDirectory, "flowmachine.xml");
                 _configurationStore.Save(path, _models.Select(station => station.Configuration));
                 StatusMessage = "Configuration saved to " + path;
+                Growl.Success("Configuration saved.", "FlowMachine");
             }
             catch (Exception exception)
             {
                 StatusMessage = "Save failed: " + exception.Message;
+                Growl.Error(StatusMessage, "FlowMachine");
             }
         }
 
@@ -214,10 +217,12 @@ namespace FlowMachine.App.ViewModels
 
                 SelectedStation = Stations.FirstOrDefault();
                 StatusMessage = "Configuration loaded from " + path;
+                Growl.Success("Configuration loaded.", "FlowMachine");
             }
             catch (Exception exception)
             {
                 StatusMessage = "Load failed: " + exception.Message;
+                Growl.Error(StatusMessage, "FlowMachine");
             }
         }
 
@@ -335,6 +340,7 @@ namespace FlowMachine.App.ViewModels
             catch (Exception exception)
             {
                 StatusMessage = exception.Message;
+                Growl.Error(exception.Message, "FlowMachine");
             }
         }
 
@@ -377,6 +383,10 @@ namespace FlowMachine.App.ViewModels
                 OnPropertyChanged("BusStateText");
                 OnPropertyChanged("IsBusy");
                 NotifyCommands();
+                if (args.Current == BusState.Faulted)
+                {
+                    Growl.Error("Execution fault at station " + _bus.FaultStationId + ".", "FlowMachine");
+                }
             });
         }
 

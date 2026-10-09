@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:FlowMachine.App.ViewModels"
              xmlns:nodify="https://miroiu.github.io/nodify"
+             xmlns:hc="https://handyorg.github.io/handycontrol"
              xmlns:prism="http://prismlibrary.com/"
              prism:ViewModelLocator.AutoWireViewModel="True">
     <UserControl.Resources>
@@ -167,6 +168,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Station" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*" />
                             <DataGridTextColumn Header="Type" Binding="{Binding TypeName}" IsReadOnly="True" Width="58" />
+                            <DataGridTextColumn Header="State" Binding="{Binding StateName}" IsReadOnly="True" Width="72" />
                             <DataGridCheckBoxColumn Header="On" Binding="{Binding Enabled}" Width="38" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -321,5 +323,14 @@
 
         <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Margin="3,6,3,0"
                    TextWrapping="Wrap" Foreground="#475569" />
+
+        <ScrollViewer Grid.Row="0" Grid.RowSpan="4"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Top"
+                      VerticalScrollBarVisibility="Hidden"
+                      IsHitTestVisible="False"
+                      Panel.ZIndex="10">
+            <StackPanel hc:Growl.Token="FlowMachine" MaxWidth="360" />
+        </ScrollViewer>
     </Grid>
 </UserControl>

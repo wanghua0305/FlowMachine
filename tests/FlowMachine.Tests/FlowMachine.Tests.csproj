@@ -14,4 +14,9 @@
     <ProjectReference Include="..\..\src\FlowMachine.Infrastructure\FlowMachine.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\samples\demo-flowmachine.xml" Link="demo-flowmachine.xml"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
