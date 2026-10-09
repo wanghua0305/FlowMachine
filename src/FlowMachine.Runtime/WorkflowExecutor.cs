@@ -57,21 +57,21 @@ namespace FlowMachine.Runtime
                     await pauseGate.WaitIfPauseRequestedAsync(
                         delegate
                         {
-                            if (station.State == StationState.Running)
+                            if (station.State == StationState.Running
+                                && station.TryTransitionTo(StationState.Pausing))
                             {
-                                station.TransitionTo(StationState.Pausing);
+                                station.TryTransitionTo(StationState.Paused);
                             }
-
-                            if (station.State == StationState.Pausing)
+                            else if (station.State == StationState.Pausing)
                             {
-                                station.TransitionTo(StationState.Paused);
+                                station.TryTransitionTo(StationState.Paused);
                             }
                         },
                         delegate
                         {
                             if (station.State == StationState.Paused)
                             {
-                                station.TransitionTo(StationState.Running);
+                                station.TryTransitionTo(StationState.Running);
                             }
                         },
                         cancellationToken).ConfigureAwait(false);

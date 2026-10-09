@@ -233,7 +233,8 @@ namespace FlowMachine.Tests
         {
             StationConfiguration invalid = MakeConfiguration(StationTypeIds.Flow, "Invalid", 0, 0);
             invalid.Connections.RemoveAt(invalid.Connections.Count - 1);
-            List<IStation> invalidStations = MakeStations(invalid);
+            List<IStation> invalidStations = MakeStations(invalid,
+                MakeConfiguration(StationTypeIds.Flow, "Later", 0, 0));
             BusController invalidBus = CreateBus(invalidStations, null);
             bool failed = false;
             try
@@ -247,6 +248,8 @@ namespace FlowMachine.Tests
 
             Assert(failed && invalidBus.State == BusState.Faulted, "Invalid graph fault was not propagated.");
             Assert(invalidBus.FaultStationId == invalidStations[0].Id, "Fault station id was not recorded.");
+            Assert(invalidStations[1].State == StationState.Idle,
+                "The bus started a later station after the first station faulted.");
             await invalidBus.ResetAsync().ConfigureAwait(false);
             Assert(invalidBus.State == BusState.Idle, "Reset did not clear a completed fault.");
 

@@ -136,31 +136,28 @@ namespace FlowMachine.Runtime
         public async Task StopAsync()
         {
             Task active;
-            CancellationTokenSource cancellation;
-            PauseGate gate;
             lock (_sync)
             {
                 active = _activeTask;
-                cancellation = _activeCancellation;
-                gate = _activePauseGate;
-                if (active == null)
+                if (active == null || active.IsCompleted)
                 {
                     return;
                 }
-            }
 
-            if (State != BusState.Completed && State != BusState.Faulted)
-            {
-                ChangeState(BusState.Stopping);
-            }
-            if (gate != null)
-            {
-                gate.Cancel();
-            }
+                if (_state != BusState.Completed && _state != BusState.Faulted)
+                {
+                    ChangeState(BusState.Stopping);
+                }
 
-            if (cancellation != null)
-            {
-                cancellation.Cancel();
+                if (_activePauseGate != null)
+                {
+                    _activePauseGate.Cancel();
+                }
+
+                if (_activeCancellation != null)
+                {
+                    _activeCancellation.Cancel();
+                }
             }
 
             try
@@ -178,6 +175,7 @@ namespace FlowMachine.Runtime
         public async Task PauseAsync()
         {
             PauseGate gate;
+            IStation current;
             lock (_sync)
             {
                 if (_activeTask == null || _activeTask.IsCompleted)
@@ -201,21 +199,16 @@ namespace FlowMachine.Runtime
                 {
                     throw new InvalidOperationException("The operation has no pause gate.");
                 }
-            }
-
-            ChangeState(BusState.Pausing);
-            IStation current;
-            lock (_sync)
-            {
+                ChangeState(BusState.Pausing);
                 current = _activeStation;
+                if (current != null)
+                {
+                    current.TryTransitionTo(StationState.Pausing);
+                }
+
+                gate.RequestPause();
             }
 
-            if (current != null && current.State == StationState.Running)
-            {
-                current.TransitionTo(StationState.Pausing);
-            }
-
-            gate.RequestPause();
             bool paused = await gate.WaitForPauseOrCompletionAsync().ConfigureAwait(false);
             if (paused)
             {
@@ -231,7 +224,6 @@ namespace FlowMachine.Runtime
 
         public Task ResumeAsync()
         {
-            PauseGate gate;
             lock (_sync)
             {
                 if (_state != BusState.Paused || _activeTask == null)
@@ -239,11 +231,10 @@ namespace FlowMachine.Runtime
                     throw new InvalidOperationException("The bus is not paused.");
                 }
 
-                gate = _activePauseGate;
+                _activePauseGate.Resume();
+                ChangeState(BusState.Running);
             }
 
-            gate.Resume();
-            ChangeState(BusState.Running);
             return Task.FromResult(0);
         }
 
@@ -379,7 +370,6 @@ namespace FlowMachine.Runtime
                 pauseGate.Complete();
                 lock (_sync)
                 {
-                    _activeTask = null;
                     _activeStation = null;
                     _activePauseGate = null;
                     _activeKind = null;

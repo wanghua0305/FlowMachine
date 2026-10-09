@@ -19,14 +19,20 @@ namespace FlowMachine.Core
         void SetNodeStatus(string nodeId, NodeExecutionStatus status);
         void SetFault(string message);
         void TransitionTo(StationState state);
+        bool TryTransitionTo(StationState state);
     }
 
     public abstract class StationBase : IStation
     {
+        private readonly object _sync = new object();
+        private StationState _state;
+        private string _currentNodeId;
+        private string _faultMessage;
+
         protected StationBase(StationConfiguration configuration)
         {
             Configuration = configuration;
-            State = StationState.Idle;
+            _state = StationState.Idle;
         }
 
         public StationConfiguration Configuration { get; private set; }
@@ -36,25 +42,45 @@ namespace FlowMachine.Core
         public abstract bool CanStartAutomatically { get; }
         public abstract bool CanBeHomed { get; }
         public abstract bool CanRunManually { get; }
-        public StationState State { get; private set; }
-        public string CurrentNodeId { get; private set; }
-        public string FaultMessage { get; private set; }
+        public StationState State
+        {
+            get { lock (_sync) { return _state; } }
+        }
+        public string CurrentNodeId
+        {
+            get { lock (_sync) { return _currentNodeId; } }
+        }
+        public string FaultMessage
+        {
+            get { lock (_sync) { return _faultMessage; } }
+        }
         public event EventHandler<StationStateChangedEventArgs> StateChanged;
         public event EventHandler<NodeStatusChangedEventArgs> NodeStatusChanged;
 
         public void TransitionTo(StationState state)
         {
-            if (!IsAllowedTransition(State, state))
+            if (!TryTransitionTo(state))
             {
-                throw new InvalidOperationException(
-                    "Illegal station state transition: " + State + " -> " + state + ".");
+                throw new InvalidOperationException("Illegal station state transition to " + state + ".");
             }
+        }
 
-            StationState previous = State;
-            State = state;
-            if (state == StationState.Idle || state == StationState.Completed)
+        public bool TryTransitionTo(StationState state)
+        {
+            StationState previous;
+            lock (_sync)
             {
-                CurrentNodeId = null;
+                previous = _state;
+                if (!IsAllowedTransition(previous, state))
+                {
+                    return false;
+                }
+
+                _state = state;
+                if (state == StationState.Idle || state == StationState.Completed)
+                {
+                    _currentNodeId = null;
+                }
             }
 
             EventHandler<StationStateChangedEventArgs> handler = StateChanged;
@@ -62,11 +88,20 @@ namespace FlowMachine.Core
             {
                 handler(this, new StationStateChangedEventArgs(previous, state));
             }
+
+            return true;
         }
 
         public void SetNodeStatus(string nodeId, NodeExecutionStatus status)
         {
-            CurrentNodeId = status == NodeExecutionStatus.Running ? nodeId : CurrentNodeId;
+            lock (_sync)
+            {
+                if (status == NodeExecutionStatus.Running)
+                {
+                    _currentNodeId = nodeId;
+                }
+            }
+
             EventHandler<NodeStatusChangedEventArgs> handler = NodeStatusChanged;
             if (handler != null)
             {
@@ -76,7 +111,10 @@ namespace FlowMachine.Core
 
         public void SetFault(string message)
         {
-            FaultMessage = message;
+            lock (_sync)
+            {
+                _faultMessage = message;
+            }
         }
 
         private static bool IsAllowedTransition(StationState from, StationState to)
