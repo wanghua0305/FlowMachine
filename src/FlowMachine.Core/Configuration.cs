@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 
 namespace FlowMachine.Core
 {
@@ -35,6 +36,7 @@ namespace FlowMachine.Core
             Id = Guid.NewGuid().ToString("N");
             Nodes = new List<NodeDefinition>();
             Connections = new List<ConnectionDefinition>();
+            LoadWarnings = new List<string>();
             Enabled = true;
         }
 
@@ -44,6 +46,8 @@ namespace FlowMachine.Core
         public bool Enabled { get; set; }
         public List<NodeDefinition> Nodes { get; set; }
         public List<ConnectionDefinition> Connections { get; set; }
+        [XmlIgnore]
+        public List<string> LoadWarnings { get; set; }
     }
 
     public sealed class NodeDefinition

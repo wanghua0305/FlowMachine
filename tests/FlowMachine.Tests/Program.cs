@@ -28,6 +28,7 @@ namespace FlowMachine.Tests
                 Tuple.Create("Stop cleans up the active task", (Func<Task>)StopCleansUp),
                 Tuple.Create("Fault and timeout reach the bus", (Func<Task>)FaultAndTimeoutPropagate),
                 Tuple.Create("Configuration round-trips graph edges", (Func<Task>)ConfigurationRoundTrips),
+                Tuple.Create("Incomplete workflow drafts survive save/load", (Func<Task>)DraftConfigurationRoundTrips),
                 Tuple.Create("Demo configuration loads", (Func<Task>)DemoConfigurationLoads),
                 Tuple.Create("Hardware configuration checks IO directions", (Func<Task>)HardwareConfigurationChecksDirections)
             };
@@ -315,6 +316,33 @@ namespace FlowMachine.Tests
                 "Demo HomeStation was not restored.");
             Assert(stations.Any(station => station.StationType == StationTypeIds.Test),
                 "Demo TestStation was not restored.");
+            return Task.FromResult(0);
+        }
+
+        private static Task DraftConfigurationRoundTrips()
+        {
+            StationFactory factory = new StationFactory();
+            ConfigurationStore store = new ConfigurationStore(factory);
+            StationConfiguration draft = MakeConfiguration(StationTypeIds.Flow, "Draft", 0, 0);
+            draft.Connections.RemoveAt(draft.Connections.Count - 1);
+            string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".xml");
+            try
+            {
+                store.Save(path, new[] { draft });
+                StationConfiguration loaded = store.Load(path).Single();
+                Assert(loaded.Connections.Count == draft.Connections.Count,
+                    "Draft connection list changed during save/load.");
+                Assert(loaded.LoadWarnings.Count > 0,
+                    "An invalid draft was loaded without a validation warning.");
+            }
+            finally
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+
             return Task.FromResult(0);
         }
 

@@ -126,6 +126,7 @@ namespace FlowMachine.Infrastructure
                     throw new InvalidDataException("Every station must have a unique non-empty id.");
                 }
 
+                station.LoadWarnings.Clear();
                 try
                 {
                     _stationFactory.Create(station);
@@ -165,8 +166,7 @@ namespace FlowMachine.Infrastructure
                 }
                 catch (WorkflowValidationException exception)
                 {
-                    throw new InvalidDataException("Station " + station.Name
-                        + " contains an invalid workflow: " + exception.Message, exception);
+                    station.LoadWarnings.Add("Workflow is incomplete or invalid: " + exception.Message);
                 }
 
                 if (_hardwareValidator != null)
@@ -180,8 +180,8 @@ namespace FlowMachine.Infrastructure
                                 : new List<string>();
                         if (hardwareErrors.Count != 0)
                         {
-                            throw new InvalidDataException("Hardware configuration for node "
-                                + node.Id + " is invalid: " + string.Join(" ", hardwareErrors));
+                            station.LoadWarnings.Add("Hardware configuration for node " + node.Id
+                                + " is invalid: " + string.Join(" ", hardwareErrors));
                         }
                     }
                 }

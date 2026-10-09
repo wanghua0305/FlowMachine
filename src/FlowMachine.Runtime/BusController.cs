@@ -263,9 +263,9 @@ namespace FlowMachine.Runtime
                 }
 
                 _faultStationId = null;
+                ChangeState(BusState.Idle);
             }
 
-            ChangeState(BusState.Idle);
             WriteLog(null, null, "Info", "Bus state reset; no station was started or homed.");
             return Task.FromResult(0);
         }

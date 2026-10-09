@@ -39,8 +39,11 @@ namespace FlowMachine.App.ViewModels
             _dispatcher = Dispatcher.CurrentDispatcher;
             _busState = bus.State;
             PendingConnection = new PendingConnectionViewModel();
-            Stations = new ObservableCollection<StationItemViewModel>(
-                stations.Select(station => new StationItemViewModel(station)));
+            Stations = new ObservableCollection<StationItemViewModel>();
+            foreach (IStation station in stations)
+            {
+                Stations.Add(CreateStationItem(station));
+            }
             Logs = new ObservableCollection<RuntimeLogEntry>();
             InputPoints = deviceService.Io.GetPoints(IoDirection.Input);
             OutputPoints = deviceService.Io.GetPoints(IoDirection.Output);
@@ -208,16 +211,31 @@ namespace FlowMachine.App.ViewModels
                     _models.Remove(station);
                 }
 
+                foreach (StationItemViewModel item in Stations)
+                {
+                    item.PropertyChanged -= OnStationItemPropertyChanged;
+                }
+
                 Stations.Clear();
                 foreach (IStation station in loaded)
                 {
                     _models.Add(station);
-                    Stations.Add(new StationItemViewModel(station));
+                    Stations.Add(CreateStationItem(station));
                 }
 
                 SelectedStation = Stations.FirstOrDefault();
-                StatusMessage = "Configuration loaded from " + path;
-                Growl.Success("Configuration loaded.", "FlowMachine");
+                List<string> warnings = loaded.SelectMany(station =>
+                    station.Configuration.LoadWarnings.Select(warning => station.Name + ": " + warning)).ToList();
+                if (warnings.Count == 0)
+                {
+                    StatusMessage = "Configuration loaded from " + path;
+                    Growl.Success("Configuration loaded.", "FlowMachine");
+                }
+                else
+                {
+                    StatusMessage = "Configuration loaded with warnings: " + string.Join(" | ", warnings);
+                    Growl.Warning(StatusMessage, "FlowMachine");
+                }
             }
             catch (Exception exception)
             {
@@ -237,7 +255,7 @@ namespace FlowMachine.App.ViewModels
             StationConfiguration configuration = CreateDefaultStation(type);
             IStation station = _stationFactory.Create(configuration);
             _models.Add(station);
-            StationItemViewModel item = new StationItemViewModel(station);
+            StationItemViewModel item = CreateStationItem(station);
             Stations.Add(item);
             SelectedStation = item;
             StatusMessage = type + " station created.";
@@ -250,6 +268,7 @@ namespace FlowMachine.App.ViewModels
                 return;
             }
 
+            SelectedStation.PropertyChanged -= OnStationItemPropertyChanged;
             _models.Remove(SelectedStation.Station);
             Stations.Remove(SelectedStation);
             SelectedStation = Stations.FirstOrDefault();
@@ -388,6 +407,21 @@ namespace FlowMachine.App.ViewModels
                     Growl.Error("Execution fault at station " + _bus.FaultStationId + ".", "FlowMachine");
                 }
             });
+        }
+
+        private StationItemViewModel CreateStationItem(IStation station)
+        {
+            StationItemViewModel item = new StationItemViewModel(station);
+            item.PropertyChanged += OnStationItemPropertyChanged;
+            return item;
+        }
+
+        private void OnStationItemPropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == "Enabled")
+            {
+                Dispatch(NotifyCommands);
+            }
         }
 
         private void OnBusLog(object sender, RuntimeLogEntry entry)
