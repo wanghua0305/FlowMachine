@@ -34,6 +34,7 @@ namespace FlowMachine.Core
 
     public interface IAxisService
     {
+        IList<string> GetAxisIds();
         Task HomeAsync(string axisId, CancellationToken cancellationToken);
         Task MoveAbsoluteAsync(string axisId, double position, double speed, double acceleration,
             CancellationToken cancellationToken);
@@ -44,6 +45,7 @@ namespace FlowMachine.Core
 
     public interface ICylinderService
     {
+        IList<string> GetCylinderIds();
         Task MoveAsync(string cylinderId, string action, CancellationToken cancellationToken);
     }
 

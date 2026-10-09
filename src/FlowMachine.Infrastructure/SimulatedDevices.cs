@@ -82,11 +82,18 @@ namespace FlowMachine.Infrastructure
     {
         private readonly IDeviceResourceLock _resourceLock;
         private readonly ConcurrentDictionary<string, double> _positions;
+        private readonly IList<string> _axisIds;
 
         public SimulatedAxisService(IDeviceResourceLock resourceLock)
         {
             _resourceLock = resourceLock;
             _positions = new ConcurrentDictionary<string, double>();
+            _axisIds = new List<string> { "Axis-X", "Axis-Y" };
+        }
+
+        public IList<string> GetAxisIds()
+        {
+            return _axisIds.ToList();
         }
 
         public async Task HomeAsync(string axisId, CancellationToken cancellationToken)
@@ -140,15 +147,22 @@ namespace FlowMachine.Infrastructure
     public sealed class SimulatedCylinderService : ICylinderService
     {
         private readonly IDeviceResourceLock _resourceLock;
+        private readonly IList<string> _cylinderIds;
 
         public SimulatedCylinderService(IDeviceResourceLock resourceLock)
         {
             _resourceLock = resourceLock;
+            _cylinderIds = new List<string> { "Cylinder-A", "Cylinder-B" };
+        }
+
+        public IList<string> GetCylinderIds()
+        {
+            return _cylinderIds.ToList();
         }
 
         public async Task MoveAsync(string cylinderId, string action, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(cylinderId)
+            if (!_cylinderIds.Contains(cylinderId)
                 || (action != "extend" && action != "retract"))
             {
                 throw new ArgumentException("A cylinder id and extend/retract action are required.");

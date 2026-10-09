@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using FlowMachine.Core;
+using FlowMachine.Runtime;
 
 namespace FlowMachine.Infrastructure
 {
@@ -34,10 +35,18 @@ namespace FlowMachine.Infrastructure
     {
         public const int CurrentFormatVersion = 1;
         private readonly IStationFactory _stationFactory;
+        private readonly HardwareConfigurationValidator _hardwareValidator;
 
         public ConfigurationStore(IStationFactory stationFactory)
+            : this(stationFactory, null)
+        {
+        }
+
+        public ConfigurationStore(IStationFactory stationFactory,
+            HardwareConfigurationValidator hardwareValidator)
         {
             _stationFactory = stationFactory;
+            _hardwareValidator = hardwareValidator;
         }
 
         public void Save(string path, IEnumerable<StationConfiguration> stations)
@@ -75,10 +84,12 @@ namespace FlowMachine.Infrastructure
 
             if (File.Exists(fullPath))
             {
-                File.Delete(fullPath);
+                File.Replace(temporaryPath, fullPath, null);
             }
-
-            File.Move(temporaryPath, fullPath);
+            else
+            {
+                File.Move(temporaryPath, fullPath);
+            }
         }
 
         public IList<StationConfiguration> Load(string path)
@@ -144,6 +155,34 @@ namespace FlowMachine.Infrastructure
                     {
                         throw new InvalidDataException("Station " + station.Name
                             + " contains unknown node type '" + node.Type + "'.");
+                    }
+                }
+
+                try
+                {
+                    new WorkflowValidator().Validate(new WorkflowSnapshot(station.Id,
+                        station.Name, station.StationType, station.Nodes, station.Connections), true);
+                }
+                catch (WorkflowValidationException exception)
+                {
+                    throw new InvalidDataException("Station " + station.Name
+                        + " contains an invalid workflow: " + exception.Message, exception);
+                }
+
+                if (_hardwareValidator != null)
+                {
+                    foreach (NodeDefinition node in station.Nodes)
+                    {
+                        IList<string> hardwareErrors = node.Type == NodeTypeIds.Cylinder
+                            ? _hardwareValidator.ValidateCylinder(node.Cylinder)
+                            : node.Type == NodeTypeIds.Axis
+                                ? _hardwareValidator.ValidateAxis(node.Axis)
+                                : new List<string>();
+                        if (hardwareErrors.Count != 0)
+                        {
+                            throw new InvalidDataException("Hardware configuration for node "
+                                + node.Id + " is invalid: " + string.Join(" ", hardwareErrors));
+                        }
                     }
                 }
 

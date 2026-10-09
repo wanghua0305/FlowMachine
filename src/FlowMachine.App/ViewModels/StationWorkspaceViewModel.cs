@@ -285,7 +285,8 @@ namespace FlowMachine.App.ViewModels
             EditorConnectorViewModel target = parameter as EditorConnectorViewModel;
             EditorConnectorViewModel source = PendingConnection.Source;
             return !IsBusy && SelectedStation != null && source != null && target != null
-                && target.IsInput && !target.IsConnected && source.Owner != target.Owner;
+                && target.IsInput && source.Owner != target.Owner
+                && SelectedStation.Connections.All(connection => connection.Source != source);
         }
 
         private void CreateConnection(object parameter)

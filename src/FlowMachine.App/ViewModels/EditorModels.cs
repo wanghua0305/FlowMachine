@@ -280,7 +280,7 @@ namespace FlowMachine.App.ViewModels
         public bool AddConnection(EditorConnectorViewModel source, EditorConnectorViewModel target)
         {
             if (source == null || target == null || source.IsInput || !target.IsInput
-                || source.Owner == target.Owner || target.IsConnected
+                || source.Owner == target.Owner
                 || Connections.Any(connection => connection.Source == source))
             {
                 return false;

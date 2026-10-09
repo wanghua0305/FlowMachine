@@ -400,6 +400,11 @@ namespace FlowMachine.Runtime
             lock (_sync)
             {
                 previous = _state;
+                if (previous == BusState.Stopping && state == BusState.Completed)
+                {
+                    return;
+                }
+
                 if (!IsAllowedTransition(previous, state))
                 {
                     throw new InvalidOperationException(

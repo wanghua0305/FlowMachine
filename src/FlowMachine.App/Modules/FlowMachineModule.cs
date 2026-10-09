@@ -27,7 +27,8 @@ namespace FlowMachine.App.Modules
             containerRegistry.RegisterInstance<IList<IStation>>(stations);
             containerRegistry.RegisterInstance<IBusController>(bus);
             containerRegistry.RegisterInstance<FlowConfigurationStoreContract>(
-                new FlowConfigurationStore(stationFactory));
+                new FlowConfigurationStore(stationFactory,
+                    new HardwareConfigurationValidator(devices)));
             containerRegistry.RegisterInstance<IDeviceService>(devices);
             containerRegistry.RegisterForNavigation<StationWorkspaceView>();
         }

@@ -41,6 +41,7 @@ namespace FlowMachine.Runtime
                 _pauseRequested = false;
                 resume = _resumeSource;
                 _resumeSource = null;
+                _pauseReachedSource = null;
             }
 
             if (resume != null)

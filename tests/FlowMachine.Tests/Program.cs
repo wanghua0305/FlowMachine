@@ -22,6 +22,8 @@ namespace FlowMachine.Tests
                 Tuple.Create("TestStations require manual execution", (Func<Task>)TestStationsRequireManualExecution),
                 Tuple.Create("Repeated start shares one task", (Func<Task>)RepeatedStartSharesTask),
                 Tuple.Create("Pause waits at a node boundary", (Func<Task>)PauseWaitsAtBoundary),
+                Tuple.Create("Condition branches follow their connection labels", (Func<Task>)ConditionBranchesAreExplicit),
+                Tuple.Create("Pause can be requested again after resume", (Func<Task>)PauseCanBeRepeated),
                 Tuple.Create("Resume does not repeat completed nodes", (Func<Task>)ResumeDoesNotRepeatNodes),
                 Tuple.Create("Stop cleans up the active task", (Func<Task>)StopCleansUp),
                 Tuple.Create("Fault and timeout reach the bus", (Func<Task>)FaultAndTimeoutPropagate),
@@ -162,6 +164,52 @@ namespace FlowMachine.Tests
                 "The completed delay node was repeated after resume.");
             Assert(logs.Count(log => log.Message == "Started log node.") == 1,
                 "The log node did not execute exactly once.");
+        }
+
+        private static async Task ConditionBranchesAreExplicit()
+        {
+            foreach (bool value in new[] { true, false })
+            {
+                ConcurrentQueue<RuntimeLogEntry> logs = new ConcurrentQueue<RuntimeLogEntry>();
+                List<IStation> stations = MakeStations(MakeConditionConfiguration(value));
+                BusController bus = CreateBus(stations, logs);
+                await bus.StartAsync(CancellationToken.None).ConfigureAwait(false);
+
+                string chosen = value ? "selected true" : "selected false";
+                string skipped = value ? "selected false" : "selected true";
+                Assert(logs.Any(log => log.Message == chosen), "Condition branch was not followed: " + chosen);
+                Assert(!logs.Any(log => log.Message == skipped), "The unselected condition branch executed.");
+            }
+        }
+
+        private static async Task PauseCanBeRepeated()
+        {
+            PauseGate gate = new PauseGate();
+            int pausedCount = 0;
+            Task worker = Task.Run(async delegate
+            {
+                await gate.WaitIfPauseRequestedAsync(
+                    delegate { Interlocked.Increment(ref pausedCount); },
+                    delegate { },
+                    CancellationToken.None).ConfigureAwait(false);
+                await Task.Delay(100).ConfigureAwait(false);
+                await gate.WaitIfPauseRequestedAsync(
+                    delegate { Interlocked.Increment(ref pausedCount); },
+                    delegate { },
+                    CancellationToken.None).ConfigureAwait(false);
+            });
+
+            gate.RequestPause();
+            Assert(await gate.WaitForPauseOrCompletionAsync().ConfigureAwait(false),
+                "First pause was not observed.");
+            gate.Resume();
+            await Task.Delay(20).ConfigureAwait(false);
+            gate.RequestPause();
+            Assert(await gate.WaitForPauseOrCompletionAsync().ConfigureAwait(false),
+                "Second pause was not observed.");
+            Assert(pausedCount == 2, "The second pause completed before its boundary.");
+            gate.Resume();
+            await worker.ConfigureAwait(false);
         }
 
         private static async Task StopCleansUp()
@@ -306,6 +354,56 @@ namespace FlowMachine.Tests
                 Branch = BranchIds.Next
             });
             return configuration;
+        }
+
+        private static StationConfiguration MakeConditionConfiguration(bool conditionValue)
+        {
+            StationConfiguration configuration = new StationConfiguration
+            {
+                Name = "Condition",
+                StationType = StationTypeIds.Flow,
+                Enabled = true
+            };
+            NodeDefinition start = new NodeDefinition { Type = NodeTypeIds.Start };
+            NodeDefinition condition = new NodeDefinition
+            {
+                Type = NodeTypeIds.Condition,
+                ConditionKey = "simulated",
+                ConditionValue = conditionValue
+            };
+            NodeDefinition trueLog = new NodeDefinition
+            {
+                Type = NodeTypeIds.Log,
+                Message = "selected true"
+            };
+            NodeDefinition falseLog = new NodeDefinition
+            {
+                Type = NodeTypeIds.Log,
+                Message = "selected false"
+            };
+            NodeDefinition end = new NodeDefinition { Type = NodeTypeIds.End };
+            configuration.Nodes.Add(start);
+            configuration.Nodes.Add(condition);
+            configuration.Nodes.Add(trueLog);
+            configuration.Nodes.Add(falseLog);
+            configuration.Nodes.Add(end);
+            AddConnection(configuration, start, condition, BranchIds.Next);
+            AddConnection(configuration, condition, trueLog, BranchIds.True);
+            AddConnection(configuration, condition, falseLog, BranchIds.False);
+            AddConnection(configuration, trueLog, end, BranchIds.Next);
+            AddConnection(configuration, falseLog, end, BranchIds.Next);
+            return configuration;
+        }
+
+        private static void AddConnection(StationConfiguration configuration, NodeDefinition source,
+            NodeDefinition target, string branch)
+        {
+            configuration.Connections.Add(new ConnectionDefinition
+            {
+                SourceNodeId = source.Id,
+                TargetNodeId = target.Id,
+                Branch = branch
+            });
         }
 
         private static void Assert(bool condition, string message)

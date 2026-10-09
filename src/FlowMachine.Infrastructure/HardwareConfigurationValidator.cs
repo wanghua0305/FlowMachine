@@ -23,6 +23,11 @@ namespace FlowMachine.Infrastructure
                 return errors;
             }
 
+            if (!_deviceService.Cylinders.GetCylinderIds().Contains(configuration.CylinderId))
+            {
+                errors.Add("Cylinder '" + configuration.CylinderId + "' is not available.");
+            }
+
             if (configuration.Action != "extend" && configuration.Action != "retract")
             {
                 errors.Add("Cylinder action must be extend or retract.");
@@ -66,6 +71,11 @@ namespace FlowMachine.Infrastructure
             {
                 errors.Add("An axis identifier is required.");
                 return errors;
+            }
+
+            if (!_deviceService.Axes.GetAxisIds().Contains(configuration.AxisId))
+            {
+                errors.Add("Axis '" + configuration.AxisId + "' is not available.");
             }
 
             if (configuration.TimeoutMilliseconds <= 0)

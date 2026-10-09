@@ -18,7 +18,7 @@ namespace FlowMachine.Runtime
 
     public sealed class WorkflowValidator
     {
-        public void Validate(WorkflowSnapshot workflow)
+        public void Validate(WorkflowSnapshot workflow, bool allowReservedHardwareNodes = false)
         {
             if (workflow == null)
             {
@@ -45,7 +45,7 @@ namespace FlowMachine.Runtime
                     nodes.Add(node.Id, node);
                 }
 
-                ValidateNode(node, errors);
+                ValidateNode(node, errors, allowReservedHardwareNodes);
             }
 
             NodeDefinition[] starts = nodes.Values.Where(n => n.Type == NodeTypeIds.Start).ToArray();
@@ -126,9 +126,9 @@ namespace FlowMachine.Runtime
                 {
                     errors.Add("Start node " + node.Id + " cannot have incoming connections.");
                 }
-                else if (node.Type != NodeTypeIds.Start && incomingCounts[node.Id] != 1)
+                else if (node.Type != NodeTypeIds.Start && incomingCounts[node.Id] == 0)
                 {
-                    errors.Add("Node " + node.Id + " requires exactly one incoming connection.");
+                    errors.Add("Node " + node.Id + " requires at least one incoming connection.");
                 }
             }
 
@@ -154,7 +154,8 @@ namespace FlowMachine.Runtime
             return branch == BranchIds.Next;
         }
 
-        private static void ValidateNode(NodeDefinition node, ICollection<string> errors)
+        private static void ValidateNode(NodeDefinition node, ICollection<string> errors,
+            bool allowReservedHardwareNodes)
         {
             switch (node.Type)
             {
@@ -185,8 +186,11 @@ namespace FlowMachine.Runtime
                     break;
                 case NodeTypeIds.Cylinder:
                 case NodeTypeIds.Axis:
-                    errors.Add("Hardware node " + node.Id
-                        + " is configured for a future phase and cannot run in this simulator.");
+                    if (!allowReservedHardwareNodes)
+                    {
+                        errors.Add("Hardware node " + node.Id
+                            + " is configured for a future phase and cannot run in this simulator.");
+                    }
                     break;
                 default:
                     errors.Add("Unknown node type '" + node.Type + "' at node " + node.Id + ".");
